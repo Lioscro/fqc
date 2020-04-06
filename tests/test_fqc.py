@@ -6,5 +6,4 @@ import fqc.fqc as fqc
 class TestFqc(TestCase):
 
     def test_fqc(self):
-        fqc()
-        pass
+        fqc.fqc([])
