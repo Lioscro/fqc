@@ -32,4 +32,4 @@ def main():
 
     logger.debug('Printing verbose output')
     logger.debug(args)
-    fqc(args)
+    fqc(args.fastqs)
