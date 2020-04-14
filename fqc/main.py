@@ -5,6 +5,8 @@ import sys
 from . import __version__
 from .fqc import fqc
 
+logger = logging.getLogger(__name__)
+
 
 def main():
     """Command-line entrypoint.
@@ -28,7 +30,6 @@ def main():
         format='[%(asctime)s] %(levelname)7s %(message)s',
         level=logging.DEBUG if args.verbose else logging.INFO,
     )
-    logger = logging.getLogger(__name__)
 
     logger.debug('Printing verbose output')
     logger.debug(args)

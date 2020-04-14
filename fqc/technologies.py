@@ -3,12 +3,23 @@ from collections import namedtuple
 
 from .config import WHITELIST_DIR
 
-Technology = namedtuple(
-    'Technology', [
-        'name', 'description', 'n_files', 'reads_file', 'umi_positions',
-        'barcode_positions', 'whitelist_path'
-    ]
-)
+
+class Technology(
+        namedtuple('Technology',
+                   ['name', 'description', 'n_files', 'reads_file',
+                    'umi_positions', 'barcode_positions', 'whitelist_path'])):
+
+    def __str__(self):
+        return str(self.name)
+
+
+class OrderedTechnology(namedtuple('OrderedTechnology',
+                                   ['technology', 'permutation'])):
+
+    def __str__(self):
+        return f'{self.technology}{self.permutation}'
+
+
 ReadSubstring = namedtuple('ReadSubstring', ['file', 'start', 'stop'])
 
 TECHNOLOGIES = [
