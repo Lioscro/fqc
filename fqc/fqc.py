@@ -1,7 +1,7 @@
 import logging
 from itertools import permutations
 
-from .config import N_READS, SKIP_READS
+from .config import BARCODE_THRESHOLD
 from .technologies import OrderedTechnology, TECHNOLOGIES
 from .utils import fastq_reads, open_as_text
 
@@ -153,11 +153,15 @@ def filter_files(fastqs, technologies=None):
     return possible
 
 
-def filter_barcodes_umis(fastqs, technologies=None):
+def filter_barcodes_umis(fastqs, skip, n, technologies=None):
     """Filter for possible technologies using barcodes and UMI positions.
 
     :param fastqs: list of paths to FASTQ files
     :type fastqs: list
+    :param skip: number of reads to skip at the beginning
+    :type skip: int
+    :param n: number of reads to consider
+    :type n: int
     :param technologies: list of possible OrderedTechnology objects, defaults to `None`
     :type technologies: list, optional
 
@@ -169,7 +173,7 @@ def filter_barcodes_umis(fastqs, technologies=None):
         TECHNOLOGIES, len(fastqs)
     )
     barcodes, umis, invalids = extract_barcodes_umis(
-        fastqs, SKIP_READS, N_READS, technologies
+        fastqs, skip, n, technologies
     )
     possible = []
 
@@ -186,33 +190,84 @@ def filter_barcodes_umis(fastqs, technologies=None):
         f'Checking technologies with whitelists: {", ".join(str(technology) for technology in barcode_technologies)}'
     )
     max_ordered = None
-    max_counts = 0
+    max_count = 0
     for technology in barcode_technologies:
         with open_as_text(technology.whitelist_path, 'r') as f:
             whitelist = set(f.read().splitlines())
 
-        for t in barcodes:
-            for p in barcodes[t]:
-                count = 0
-                for bc_list in barcodes[t][p]:
-                    if ''.join(bc_list) in whitelist:
-                        count += 1
+        for p in barcodes[technology.name]:
+            count = 0
+            for bc_list in barcodes[technology.name][p]:
+                if ''.join(bc_list) in whitelist:
+                    count += 1
 
-                if count > max_counts:
-                    max_counts = count
-                    max_ordered = OrderedTechnology(technology, p)
+            if count > n * BARCODE_THRESHOLD and count > max_count:
+                max_ordered = OrderedTechnology(technology, p)
+                max_count = count
+    if max_ordered is not None:
+        possible.append(max_ordered)
+        logger.debug(
+            f'Technology {max_ordered} passed whitelist filter with {max_count}/{n} matching barcodes'
+        )
+        return possible
+
+    # Check technologies without whitelist
+    other_technologies = [
+        technology for technology in TECHNOLOGIES
+        if not technology.whitelist_path and technology.name in
+        [ordered.technology.name for ordered in technologies]
+    ]
     logger.debug(
-        f'Technology {max_ordered} had the most barcode matches: {max_counts}/{N_READS}'
+        f'Checking technologies without whitelists: {", ".join(str(ordered) for ordered in other_technologies)}'
     )
-    possible.append(max_ordered)
+    max_ordered = None
+    max_diff = 0
+    max_unique = 0
+    for technology in other_technologies:
+        # Expected number of unique barcodes if nucleotide probability is uniform
+        n_barcodes = 4**sum(
+            pos.stop - pos.start for pos in technology.barcode_positions
+        )
+        expected = n_barcodes * (1 - ((n_barcodes - 1) / n_barcodes)**n)
 
-    # TODO: check technologies without whitelist
+        for p in barcodes[technology.name]:
+            unique = set([
+                ''.join(bc_list) for bc_list in barcodes[technology.name][p]
+            ])
+            diff = expected - len(unique)
+
+            if diff > max_diff:
+                max_ordered = OrderedTechnology(technology, p)
+                max_diff = diff
+                max_unique = len(unique)
+    if max_ordered is not None:
+        possible.append(max_ordered)
+        logger.debug(
+            f'Technology {max_ordered} passed barcode filter with {max_unique}/{n} unique barcodes'
+        )
+        return possible
 
     return possible
 
 
-def fqc(fastqs):
-    technologies = all_ordered_technologies(TECHNOLOGIES, len(fastqs))
+def fqc(fastqs, skip, n, technologies=None):
+    """Detect single-cell technology and file ordering.
+
+    :param fastqs: paths to FASTQs
+    :type fastqs: list
+    :param skip: number of reads to skip at the beginning
+    :type skip: int
+    :param n: number of reads to consider
+    :type n: int
+    :param technologies: list of possible OrderedTechnology objects, defaults to `None`
+    :type technologies: list, optional
+
+    :return: TechnologyOrdering object
+    :rtype: TechnologyOrdering
+    """
+    technologies = technologies or all_ordered_technologies(
+        TECHNOLOGIES, len(fastqs)
+    )
 
     logger.info('Filtering based on number of files')
     technologies = filter_files(fastqs, technologies)
@@ -221,7 +276,7 @@ def fqc(fastqs):
     )
 
     logger.info('Filtering based on barcode and UMI sequences')
-    technologies = filter_barcodes_umis(fastqs, technologies)
+    technologies = filter_barcodes_umis(fastqs, skip, n, technologies)
     logger.info(
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
@@ -230,6 +285,7 @@ def fqc(fastqs):
         logger.error('Failed to detect technology')
     elif len(technologies) == 1:
         logger.info(f'Detected technology: {technologies[0]}')
+        return technologies[0]
     else:
         logger.warning(
             f'Ambiguous technologies: {", ".join(str(technology) for technology in technologies)}'

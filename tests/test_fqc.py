@@ -69,10 +69,12 @@ class TestFqc(TestCase):
         with mock.patch('fqc.fqc.all_ordered_technologies') as all_ordered_technologies,\
             mock.patch('fqc.fqc.filter_files') as filter_files,\
             mock.patch('fqc.fqc.filter_barcodes_umis') as filter_barcodes_umis:
-            fqc.fqc([1, 2, 3])
+            skip = mock.MagicMock()
+            n = mock.MagicMock()
+            fqc.fqc([1, 2, 3], skip, n)
 
             all_ordered_technologies.assert_called_once_with(TECHNOLOGIES, 3)
             filter_files.assert_called_once_with([1, 2, 3],
                                                  all_ordered_technologies())
-            filter_barcodes_umis.assert_called_once_with([1, 2, 3],
+            filter_barcodes_umis.assert_called_once_with([1, 2, 3], skip, n,
                                                          filter_files())

@@ -5,3 +5,4 @@ WHITELIST_DIR = os.path.join(PACKAGE_PATH, 'whitelists')
 
 SKIP_READS = 1000
 N_READS = 100000
+BARCODE_THRESHOLD = 0.8  # This fraction of barcodes must be in the whitelist.
