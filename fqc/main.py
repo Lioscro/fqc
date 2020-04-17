@@ -29,6 +29,7 @@ def main():
         type=int,
         default=N_READS
     )
+    parser.add_argument('-t', help='Number of threads', type=int, default=1)
     parser.add_argument(
         '--verbose', help='Print debugging information', action='store_true'
     )
@@ -50,7 +51,7 @@ def main():
     if len(args.files) == 1 and args.files[0].endswith('.bam'):
         logger.info('Running in mode: BAM')
         bam = BAM(args.files[0])
-        bam.to_fastq()
+        bam.to_fastq(threads=args.t)
     elif all(file.endswith(('.fastq.gz', '.fastq')) for file in args.files):
         logger.info('Running in mode: FASTQ')
         fqc(args.files, args.s, args.n)

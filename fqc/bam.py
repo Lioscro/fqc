@@ -1,6 +1,7 @@
 import logging
 
 import pysam
+from tqdm import tqdm
 
 from .technologies import TECHNOLOGIES
 from .utils import open_as_text
@@ -98,13 +99,15 @@ class BAM:
 
         raise Exception(f'Failed to detect technology for BAM {self.path}')
 
-    def to_fastq(self, prefix=''):
+    def to_fastq(self, prefix='', threads=1):
         """Split the BAM into FASTQs.
 
         :param path: path to BAM file
         :type path: str
         :param prefix: prefix to output FASTQ files, defaults to empty string
         :type prefix: str, optional
+        :param threads: number of threads to use to read the BAM file, defaults to `1`
+        :type threads: int, optional
 
         :return: list of paths to generated FASTQs
         :rtype: list
@@ -124,7 +127,12 @@ class BAM:
             for fastq in fastqs:
                 files.append(open_as_text(fastq, 'w'))
 
-            with pysam.AlignmentFile(self.path, 'rb') as f:
+            with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f:
+                count = f.count(until_eof=True)
+            logger.info(f'Detected {count} BAM entries')
+
+            with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f,\
+                tqdm(total=count) as pbar:
                 for item in f.fetch(until_eof=True):
                     reads = [[['N'] * l, ['F'] * l] for l in lengths]
                     barcodes, umis, sequence = BAM.EXTRACT_FUNCTIONS[
@@ -155,6 +163,8 @@ class BAM:
                         file.write(f'{"".join(read[0]).upper()}\n')
                         file.write(f'+\n')
                         file.write(f'{"".join(read[1]).upper()}\n')
+
+                    pbar.update(1)
 
         finally:
             for file in files:
