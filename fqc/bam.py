@@ -181,7 +181,7 @@ class BAM:
         logger.info(f'Detected {count} BAM entries')
 
         logger.addHandler(TqdmLoggingHandler())
-        q = queue.Queue(maxsize=100000)
+        q = queue.Queue(maxsize=1000000)
         pbar = tqdm(total=count)
 
         threads = []
