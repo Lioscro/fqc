@@ -1,10 +1,13 @@
 import logging
+import shutil
+import threading
+import queue
 
 import pysam
 from tqdm import tqdm
 
 from .technologies import TECHNOLOGIES
-from .utils import open_as_text
+from .utils import open_as_text, TqdmLoggingHandler
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +102,53 @@ class BAM:
 
         raise Exception(f'Failed to detect technology for BAM {self.path}')
 
+    @staticmethod
+    def parser(fastqs, queue, technology, lengths, pbar=None, i=0):
+        files = []
+        try:
+            for fastq in fastqs:
+                files.append(open_as_text(fastq, 'w'))
+
+            while True:
+                item = queue.get()
+                if item is None:
+                    break
+                reads = [[['N'] * l, ['F'] * l] for l in lengths]
+                barcodes, umis, sequence = BAM.EXTRACT_FUNCTIONS[
+                    technology.name](item)  # noqa
+
+                # Set sequence.
+                reads[technology.reads_file.file
+                      ] = [list(sequence[0]),
+                           list(sequence[1])]
+
+                # Barcode and UMI
+                for barcode, substring in zip(barcodes,
+                                              technology.barcode_positions):
+                    reads[substring.file
+                          ][0][substring.start:substring.stop] = barcode[0]
+                    reads[substring.file
+                          ][1][substring.start:substring.stop] = barcode[1]
+                for umi, substring in zip(umis, technology.umi_positions):
+                    reads[substring.file
+                          ][0][substring.start:substring.stop] = umi[0]
+                    reads[substring.file
+                          ][1][substring.start:substring.stop] = umi[1]
+
+                # Write to each file.
+                for file, read in zip(files, reads):
+                    file.write(f'@{item.query_name}\n')
+                    file.write(f'{"".join(read[0]).upper()}\n')
+                    file.write(f'+\n')
+                    file.write(f'{"".join(read[1]).upper()}\n')
+                queue.task_done()
+
+                if pbar is not None:
+                    pbar.update(1)
+        finally:
+            for file in files:
+                file.close()
+
     def to_fastq(self, prefix='', threads=1):
         """Split the BAM into FASTQs.
 
@@ -116,58 +166,52 @@ class BAM:
             f'{prefix}_{i+1}.fastq.gz' if prefix else f'{i+1}.fastq.gz'
             for i in range(self.technology.n_files)
         ]
-        logger.info(f'Splitting BAM file into FASTQs {", ".join(fastqs)}')
-        files = []
+        groups = [[
+            f'{prefix}_{i+1}_part{j}.fastq.gz'
+            if prefix else f'{i+1}_part{j}.fastq.gz' for j in range(threads)
+        ] for i in range(self.technology.n_files)]
+        logger.info(f'Splitting BAM file into FASTQs: {", ".join(fastqs)}')
         lengths = [0, 0, 0]
         for substring in self.technology.barcode_positions + self.technology.umi_positions:
             lengths[substring.file
                     ] = max(lengths[substring.file], substring.stop)
 
-        try:
-            for fastq in fastqs:
-                files.append(open_as_text(fastq, 'w'))
+        with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f:
+            count = f.count(until_eof=True)
+        logger.info(f'Detected {count} BAM entries')
 
-            with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f:
-                count = f.count(until_eof=True)
-            logger.info(f'Detected {count} BAM entries')
+        logger.addHandler(TqdmLoggingHandler())
+        q = queue.Queue(maxsize=100000)
+        pbar = tqdm(total=count)
 
-            with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f,\
-                tqdm(total=count) as pbar:
-                for item in f.fetch(until_eof=True):
-                    reads = [[['N'] * l, ['F'] * l] for l in lengths]
-                    barcodes, umis, sequence = BAM.EXTRACT_FUNCTIONS[
-                        self.technology.name](item)  # noqa
+        threads = []
+        # Start processor threads
+        for i, group in enumerate(zip(*groups)):
+            t = threading.Thread(
+                target=BAM.parser,
+                args=(group, q, self.technology, lengths, pbar, i)
+            )
+            t.daemon = True
+            t.start()
+            threads.append(t)
 
-                    # Set sequence.
-                    reads[self.technology.reads_file.file
-                          ] = [list(sequence[0]),
-                               list(sequence[1])]
+        with pysam.AlignmentFile(self.path, 'rb') as f:
+            for item in f.fetch(until_eof=True):
+                q.put(item)
 
-                    # Barcode and UMI
-                    for barcode, substring in zip(
-                            barcodes, self.technology.barcode_positions):
-                        reads[substring.file
-                              ][0][substring.start:substring.stop] = barcode[0]
-                        reads[substring.file
-                              ][1][substring.start:substring.stop] = barcode[1]
-                    for umi, substring in zip(umis,
-                                              self.technology.umi_positions):
-                        reads[substring.file
-                              ][0][substring.start:substring.stop] = umi[0]
-                        reads[substring.file
-                              ][1][substring.start:substring.stop] = umi[1]
+        # Stop consumers
+        for i in range(len(threads)):
+            q.put(None)
+        for t in threads:
+            t.join()
+        pbar.close()
 
-                    # Write to each file.
-                    for file, read in zip(files, reads):
-                        file.write(f'@{item.query_name}\n')
-                        file.write(f'{"".join(read[0]).upper()}\n')
-                        file.write(f'+\n')
-                        file.write(f'{"".join(read[1]).upper()}\n')
+        # Combine fastqs.
 
-                    pbar.update(1)
-
-        finally:
-            for file in files:
-                file.close()
+        for fastq, group in zip(fastqs, groups):
+            with open(fastq, 'wb') as wfp:
+                for part in group:
+                    with open(part, 'rb') as rfp:
+                        shutil.copyfileobj(rfp, wfp)
 
         return fastqs

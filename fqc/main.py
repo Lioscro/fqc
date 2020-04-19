@@ -29,7 +29,7 @@ def main():
         type=int,
         default=N_READS
     )
-    parser.add_argument('-t', help='Number of threads', type=int, default=1)
+    parser.add_argument('-t', help='Number of threads', type=int, default=4)
     parser.add_argument(
         '--verbose', help='Print debugging information', action='store_true'
     )
