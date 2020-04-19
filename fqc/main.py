@@ -18,18 +18,40 @@ def main():
     parser._actions[0].help = parser._actions[0].help.capitalize()
 
     parser.add_argument(
-        'files', help='Input files (FASTQs or a single BAM)', nargs='+'
+        'files',
+        metavar='FILES',
+        help='Input files (FASTQs or a single BAM)',
+        nargs='+'
     )
-    parser.add_argument(
-        '-s', help='Number of reads to skip', type=int, default=SKIP_READS
+    fastq_args = parser.add_argument_group('optional arguments for FASTQ files')
+    fastq_args.add_argument(
+        '-s',
+        metavar='SKIP',
+        help=f'Number of reads to skip at the beginning (default: {SKIP_READS})',
+        type=int,
+        default=SKIP_READS
     )
-    parser.add_argument(
+    fastq_args.add_argument(
         '-n',
-        help='Number of reads to use after skip',
+        metavar='READS',
+        help=f'Number of reads to use after skip (default: {N_READS})',
         type=int,
         default=N_READS
     )
-    parser.add_argument('-t', help='Number of threads', type=int, default=4)
+    bam_args = parser.add_argument_group('optional arguments for BAM files')
+    bam_args.add_argument(
+        '-p',
+        metavar='PREFIX',
+        help='Prefix for FASTQ files to generate',
+        type=str
+    )
+    parser.add_argument(
+        '-t',
+        metavar='THREADS',
+        help='Number of threads (default: 4)',
+        type=int,
+        default=4
+    )
     parser.add_argument(
         '--verbose', help='Print debugging information', action='store_true'
     )
