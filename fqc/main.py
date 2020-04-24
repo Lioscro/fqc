@@ -43,7 +43,8 @@ def main():
         '-p',
         metavar='PREFIX',
         help='Prefix for FASTQ files to generate',
-        type=str
+        type=str,
+        default=''
     )
     parser.add_argument(
         '-t',
@@ -73,7 +74,8 @@ def main():
     if len(args.files) == 1 and args.files[0].endswith('.bam'):
         logger.info('Running in mode: BAM')
         bam = BAM(args.files[0])
-        bam.to_fastq(threads=args.t)
+        fastqs = bam.to_fastq(prefix=args.p, threads=args.t)
+        fqc(fastqs, args.s, args.n)
     elif all(file.endswith(('.fastq.gz', '.fastq')) for file in args.files):
         logger.info('Running in mode: FASTQ')
         fqc(args.files, args.s, args.n)

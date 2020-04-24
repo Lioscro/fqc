@@ -149,7 +149,7 @@ class BAM:
                         u = reads[substring.file]
                         reads[
                             substring.file
-                        ] = f'{u[:substring.start]}{umi[0]}{u[substring.stop:]}'
+                        ] = f'{u[:substring.start]}{umi}{u[substring.stop:]}'
 
                     # Write to each file.
                     for file, read in zip(files, reads):
