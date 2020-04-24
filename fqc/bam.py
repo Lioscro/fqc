@@ -3,7 +3,7 @@ import logging
 import pysam
 from tqdm import tqdm
 
-from .technologies import TECHNOLOGIES
+from .technologies import OrderedTechnology, TECHNOLOGIES
 from .utils import open_as_text
 
 logger = logging.getLogger(__name__)
@@ -103,8 +103,8 @@ class BAM:
         :param threads: number of threads to use to read the BAM file, defaults to `1`
         :type threads: int, optional
 
-        :return: list of paths to generated FASTQs
-        :rtype: list
+        :return: (list of paths to generated FASTQs, list of OrderedTechnology objects)
+        :rtype: tuple
         """
         # Write to uncompressed FASTQ for speed
         fastqs = [
@@ -164,4 +164,6 @@ class BAM:
             for file in files:
                 file.close()
 
-        return fastqs
+        return fastqs, [
+            OrderedTechnology(self.technology, tuple(range(len(fastqs))))
+        ]

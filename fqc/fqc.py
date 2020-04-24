@@ -281,12 +281,4 @@ def fqc(fastqs, skip, n, technologies=None):
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
 
-    if not technologies:
-        logger.error('Failed to detect technology')
-    elif len(technologies) == 1:
-        logger.info(f'Detected technology: {technologies[0]}')
-        return technologies[0]
-    else:
-        logger.warning(
-            f'Ambiguous technologies: {", ".join(str(technology) for technology in technologies)}'
-        )
+    return technologies
