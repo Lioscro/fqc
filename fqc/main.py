@@ -77,7 +77,8 @@ def main():
         fastqs, technologies = bam.to_fastq(prefix=args.p, threads=args.t)
     elif all(file.endswith(('.fastq.gz', '.fastq')) for file in args.files):
         logger.info('Running in mode: FASTQ')
-        technologies = fqc(args.files, args.s, args.n)
+        fastqs = args.files
+        technologies = fqc(fastqs, args.s, args.n)
     else:
         parser.error(
             'All input files must be FASTQ (either .fastq.gz or .fastq) or a single BAM (.bam)'
@@ -86,7 +87,10 @@ def main():
     if not technologies:
         logger.error('Failed to detect technology')
     elif len(technologies) == 1:
-        logger.info(f'Detected technology: {technologies[0]}')
+        technology = technologies[0]
+        logger.info(f'Detected technology: {technology}')
+        print(technology.technology)
+        print(' '.join(fastqs[i] for i in technology.permutation))
     else:
         logger.warning(
             f'Ambiguous technologies: {", ".join(str(technology) for technology in technologies)}'

@@ -83,7 +83,7 @@ def extract_barcodes_umis(fastqs, skip, n, technologies=None):
             t_invalid = invalids.setdefault(technology.name, set())
 
             # If the permutation is [1, 0, 2], then read 0 is from fastq 1,
-            # read 2 is from fastq 0, and read 2 is from fastq 2
+            # read 1 is from fastq 0, and read 2 is from fastq 2
             if permutation not in t_invalid:
                 p_barcodes = t_barcodes.setdefault(permutation, [])
                 p_umis = t_umis.setdefault(permutation, [])

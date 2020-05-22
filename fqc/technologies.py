@@ -13,6 +13,8 @@ class Technology(
         return str(self.name)
 
 
+# If the permutation is [1, 0, 2], then read 0 is from fastq 1,
+# read 1 is from fastq 0, and read 2 is from fastq 2
 class OrderedTechnology(namedtuple('OrderedTechnology',
                                    ['technology', 'permutation'])):
 
