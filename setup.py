@@ -16,7 +16,10 @@ setup(
     author_email='phoenixter96@gmail.com',
     maintainer='Pachter Lab',
     maintainer_email='lpachter@caltech.edu',
-    description='',  # noqa
+    description=(
+        'Detect single-cell technology that was used to generate a set '
+        'of FASTQ files or a single BAM file.'
+    ),
     long_description=long_description,
     long_description_content_type='text/markdown',
     keywords='',
