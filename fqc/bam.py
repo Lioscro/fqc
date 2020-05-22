@@ -130,7 +130,7 @@ class BAM:
             with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f,\
                 tqdm(total=count) as pbar:
                 for item in f.fetch(until_eof=True):
-                    reads = ['N' * l for l in lengths]
+                    reads = ['N' * l for l in lengths]  # noqa
                     barcodes, umis, sequence = BAM.EXTRACT_FUNCTIONS[
                         self.technology.name](item)  # noqa
 
@@ -155,7 +155,7 @@ class BAM:
                     for file, read in zip(files, reads):
                         file.write(f'@{item.query_name}\n')
                         file.write(f'{read.upper()}\n')
-                        file.write(f'+\n')
+                        file.write('+\n')
                         file.write(f'{"F" * len(read)}\n')
 
                     pbar.update(1)
