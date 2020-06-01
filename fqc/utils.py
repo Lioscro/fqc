@@ -1,5 +1,9 @@
 import gzip
+
 import logging
+from urllib.parse import urlparse
+from urllib.request import urlopen
+
 from tqdm import tqdm
 
 
@@ -37,15 +41,20 @@ def open_as_text(path, mode):
 
 
 def fastq_reads(path):
-    """Generator for reads in FASTQ file.
+    """Generator for reads in a local or remote FASTQ file.
 
-    :param path: path to FASTQ file
+    :param path: path or url to FASTQ file
     :type path: str
 
     :return: generator for each read
     :rtype: generator
     """
-    with open_as_text(path, 'r') as f:
+    parse = urlparse(path)
+    open_func = gzip.open if path.endswith('.gz') else open
+    mode = 'rt' if path.endswith('.gz') else 'r'
+
+    with open_func(urlopen(path) if parse.scheme and parse.netloc else path,
+                   mode) as f:
         for n, line in enumerate(f):
             if (n + 3) % 4 == 0:
                 yield line.strip()

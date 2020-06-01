@@ -236,7 +236,11 @@ def filter_barcodes_umis(fastqs, skip, n, technologies=None):
             ])
             diff = expected - len(unique)
 
-            if diff > max_diff:
+            # Less than half unique barcodes, since by definition there should
+            # be relatively many identical barcodes, if this is a true
+            # single-cell experiment.
+            # TODO: replace this check with a proper single-cell vs bulk check
+            if diff > max_diff and len(unique) < n / 2:
                 max_ordered = OrderedTechnology(technology, p)
                 max_diff = diff
                 max_unique = len(unique)
