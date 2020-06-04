@@ -42,16 +42,27 @@ def main():
     bam_args.add_argument(
         '-p',
         metavar='PREFIX',
-        help='Prefix for FASTQ files to generate',
+        help=(
+            'Prefix for FASTQ files to generate. Ignored if `--split-bam` is not used.'
+        ),
         type=str,
         default=''
     )
-    parser.add_argument(
+    bam_args.add_argument(
         '-t',
         metavar='THREADS',
         help='Number of threads (default: 4)',
         type=int,
         default=4
+    )
+    bam_args.add_argument(
+        '--split-bam',
+        help=(
+            'Revert the BAM file into its constituent FASTQ files. '
+            'The FASTQ files will be named PREFIX_i.fastq.gz if `-p` is '
+            'provided, i.fastq.gz otherwise, where i is a positive read index.'
+        ),
+        action='store_true'
     )
     parser.add_argument(
         '--verbose', help='Print debugging information', action='store_true'
@@ -74,6 +85,13 @@ def main():
     if len(args.files) == 1 and args.files[0].endswith('.bam'):
         logger.info('Running in mode: BAM')
         bam = BAM(args.files[0])
+        if not args.split_bam:
+            logger.info((
+                'Use `--split-bam` to revert the BAM file to its constituent FASTQ '
+                'files, which can then be used for pre-processing.'
+            ))
+            print(bam.technology)
+            return
         fastqs, technologies = bam.to_fastq(prefix=args.p, threads=args.t)
     elif all(file.endswith(('.fastq.gz', '.fastq')) for file in args.files):
         logger.info('Running in mode: FASTQ')

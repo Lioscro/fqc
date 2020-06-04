@@ -1,4 +1,6 @@
 import logging
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 import pysam
 from tqdm import tqdm
@@ -50,7 +52,7 @@ class BAM:
     def __init__(self, path):
         self.path = path
         self.technology = self.detect_technology()
-        logger.info(f'Detected technology {self.technology.name}')
+        logger.info(f'Detected technology: {self.technology.name}')
 
     def detect_technology(self):
         """Detect what technology was used to generate this BAM.
@@ -58,7 +60,10 @@ class BAM:
         :return: a Technology object
         :rtype: Technology
         """
-        with pysam.AlignmentFile(self.path, 'rb') as f:
+        logger.warning('Only 10x Genomics BAM files can be detected.')
+        parse = urlparse(self.path)
+        with pysam.AlignmentFile(
+                urlopen(self.path) if parse.scheme else self.path, 'rb') as f:
             # Check first read of file to see the headers.
             for item in f.fetch(until_eof=True):
                 # This is a 10x BAM
@@ -123,12 +128,20 @@ class BAM:
             for fastq in fastqs:
                 files.append(open_as_text(fastq, 'w'))
 
-            with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f:
-                count = f.count(until_eof=True)
-            logger.info(f'Detected {count} BAM entries')
+            # Count total number only if the bam is local
+            parse = urlparse(self.path)
+            if not parse.scheme:
+                with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f:
+                    count = f.count(until_eof=True)
+                logger.info(f'Detected {count} BAM entries')
+            else:
+                logger.warning((
+                    'Skip counting total BAM entries in remote BAM. '
+                    'This means a progress bar can not be displayed.'
+                ))
 
-            with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f,\
-                tqdm(total=count) as pbar:
+            with pysam.AlignmentFile(urlopen(self.path) if parse.scheme else self.path, 'rb', threads=threads) as f,\
+                tqdm() if parse.scheme else tqdm(total=count) as pbar:
                 for item in f.fetch(until_eof=True):
                     reads = ['N' * l for l in lengths]  # noqa
                     barcodes, umis, sequence = BAM.EXTRACT_FUNCTIONS[
