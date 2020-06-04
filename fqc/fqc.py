@@ -1,5 +1,9 @@
 import logging
+from collections import Counter
 from itertools import permutations
+
+import numpy as np
+import scipy.stats as stats
 
 from .config import BARCODE_THRESHOLD
 from .technologies import OrderedTechnology, TECHNOLOGIES
@@ -220,35 +224,38 @@ def filter_barcodes_umis(fastqs, skip, n, technologies=None):
     logger.debug(
         f'Checking technologies without whitelists: {", ".join(str(ordered) for ordered in other_technologies)}'
     )
+
+    def passes_stats_threshold(mean, std, kurtosis, skew):
+        """Helper function to check if the barcode statistics passes a
+        certain threshold.
+
+        TODO: is there a way to make these numbers not arbitrary/manually selected?
+        """
+        if mean > 2 and std > 10 and kurtosis < 2000 and skew < 50:
+            return True
+        return False
+
     max_ordered = None
-    max_diff = 0
-    max_unique = 0
+    max_mean = 0
     for technology in other_technologies:
-        # Expected number of unique barcodes if nucleotide probability is uniform
-        n_barcodes = 4**sum(
-            pos.stop - pos.start for pos in technology.barcode_positions
-        )
-        expected = n_barcodes * (1 - ((n_barcodes - 1) / n_barcodes)**n)
-
         for p in barcodes[technology.name]:
-            unique = set([
-                ''.join(bc_list) for bc_list in barcodes[technology.name][p]
-            ])
-            diff = expected - len(unique)
-
-            # Less than half unique barcodes, since by definition there should
-            # be relatively many identical barcodes, if this is a true
-            # single-cell experiment.
-            # TODO: replace this check with a proper single-cell vs bulk check
-            if diff > max_diff and len(unique) < n / 2:
+            bcs = [''.join(bc_list) for bc_list in barcodes[technology.name][p]]
+            counts = list(Counter(bcs).values())
+            mean = np.mean(counts)
+            std = np.std(counts)
+            kurtosis = stats.kurtosis(counts)
+            skew = stats.skew(counts)
+            logger.debug((
+                f'Barcodes for technology {technology} has {len(set(bcs))}/{n} unique barcodes, '
+                f'mean={mean}, std={std}, kurtosis={kurtosis}, skew={skew}'
+            ))
+            if mean > max_mean and passes_stats_threshold(mean, std, kurtosis,
+                                                          skew):
                 max_ordered = OrderedTechnology(technology, p)
-                max_diff = diff
-                max_unique = len(unique)
+                max_mean = mean
     if max_ordered is not None:
         possible.append(max_ordered)
-        logger.debug(
-            f'Technology {max_ordered} passed barcode filter with {max_unique}/{n} unique barcodes'
-        )
+        logger.debug(f'Technology {max_ordered} passed barcode filter')
         return possible
 
     return possible
