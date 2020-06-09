@@ -298,7 +298,7 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
         )
 
         # Check if index fastq, which will have very low variation.
-        if len(set(rs)) / len(rs) < 0.1:
+        if len(set(rs)) / len(rs) < 0.01:
             logger.warning((
                 f'Fastq {path} has {len(set(rs))}/{len(rs)} unique sequences. '
                 'This file will be considered an index read and will be ignored.'
