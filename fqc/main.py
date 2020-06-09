@@ -3,9 +3,8 @@ import logging
 import sys
 
 from . import __version__
-from .bam import BAM
 from .config import N_READS, SKIP_READS
-from .fqc import fqc
+from .fqc import fqc_bam, fqc_fastq
 
 logger = logging.getLogger(__name__)
 
@@ -84,24 +83,27 @@ def main():
 
     if len(args.files) == 1 and args.files[0].endswith('.bam'):
         logger.info('Running in mode: BAM')
-        bam = BAM(args.files[0])
+        result = fqc_bam(
+            args.files[0], split=args.split_bam, prefix=args.p, threads=args.t
+        )
         if not args.split_bam:
             logger.info((
                 'Use `--split-bam` to revert the BAM file to its constituent FASTQ '
                 'files, which can then be used for pre-processing.'
             ))
-            print(bam.technology)
+            logger.info(f'Detected technology: {result}')
+            print(result)
             return
-        fastqs, technologies = bam.to_fastq(prefix=args.p, threads=args.t)
     elif all(file.endswith(('.fastq.gz', '.fastq')) for file in args.files):
         logger.info('Running in mode: FASTQ')
-        fastqs = args.files
-        technologies = fqc(fastqs, args.s, args.n)
+        result = fqc_fastq(args.files, args.s, args.n)
+
     else:
         parser.error(
             'All input files must be FASTQ (either .fastq.gz or .fastq) or a single BAM (.bam)'
         )
 
+    fastqs, technologies = result
     if not technologies:
         logger.error('Failed to detect technology')
     elif len(technologies) == 1:
@@ -111,5 +113,5 @@ def main():
         print(' '.join(fastqs[i] for i in technology.permutation))
     else:
         logger.warning(
-            f'Ambiguous technologies: {", ".join(str(technology) for technology in technologies)}'
+            f'Ambiguous technologies {", ".join(str(technology) for technology in technologies)}'
         )

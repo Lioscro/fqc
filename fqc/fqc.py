@@ -1,13 +1,15 @@
 import logging
-from collections import Counter
+from collections import Counter, OrderedDict
 from itertools import permutations
 
 import numpy as np
 import scipy.stats as stats
 
+from .bam import BAM
 from .config import BARCODE_THRESHOLD
+from .fastq import Fastq
 from .technologies import OrderedTechnology, TECHNOLOGIES
-from .utils import fastq_reads, open_as_text
+from .utils import open_as_text
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ def all_ordered_technologies(technologies=None, n=1):
     return ordered
 
 
-def extract_barcodes_umis(fastqs, skip, n, technologies=None):
+def extract_barcodes_umis(reads, skip, n, technologies=None):
     """Extract all sequences in barcode and UMI positions for each given
     technology for all possible orderings of the FASTQs.
 
@@ -49,8 +51,9 @@ def extract_barcodes_umis(fastqs, skip, n, technologies=None):
                 of FASTQ orderings as values. Any FASTQ ordering in the `invalids`
                 dictionary, along with the specific technology, is invalid.
 
-    :param fastqs: list of paths to FASTQ files
-    :type fastqs: list
+    :param reads: an ordered dictionary with the path to fastqs as keys and
+                  a list of reads as values
+    :type reads: OrderedDict
     :param skip: number of reads to skip at the beginning
     :type skip: int
     :param n: number of reads to consider
@@ -63,7 +66,7 @@ def extract_barcodes_umis(fastqs, skip, n, technologies=None):
     """
     logger.debug('Extracting barcode and UMI sequences')
     technologies = technologies or all_ordered_technologies(
-        TECHNOLOGIES, len(fastqs)
+        TECHNOLOGIES, len(reads)
     )
 
     # Dictionaries that contain list of barcodes/umis for each possible
@@ -71,7 +74,7 @@ def extract_barcodes_umis(fastqs, skip, n, technologies=None):
     barcodes = {}
     umis = {}
     invalids = {}
-    for i, reads in enumerate(zip(*[fastq_reads(fastq) for fastq in fastqs])):
+    for i, reads in enumerate(zip(*list(reads.values()))):
         # Ignore first SKIP_READS, and consider next N_READS only
         if i < skip:
             continue
@@ -131,11 +134,12 @@ def extract_barcodes_umis(fastqs, skip, n, technologies=None):
     return barcodes, umis, invalids
 
 
-def filter_files(fastqs, technologies=None):
+def filter_files(reads, technologies=None):
     """Filter for possible technologies using the number of files (`n_files`).
 
-    :param fastqs: list of paths to FASTQ files
-    :type fastqs: list
+    :param reads: an ordered dictionary with the path to fastqs as keys and
+                  a list of reads as values
+    :type reads: OrderedDict
     :param technologies: list of possible OrderedTechnology objects, defaults to `None`
     :type technologies: list, optional
 
@@ -144,24 +148,25 @@ def filter_files(fastqs, technologies=None):
     :rtype: list
     """
     technologies = technologies or all_ordered_technologies(
-        TECHNOLOGIES, len(fastqs)
+        TECHNOLOGIES, len(reads)
     )
 
     # Filter
     possible = []
     for ordered in technologies:
         technology = ordered.technology
-        if len(fastqs) == technology.n_files:
+        if len(reads) == technology.n_files:
             possible.append(ordered)
 
     return possible
 
 
-def filter_barcodes_umis(fastqs, skip, n, technologies=None):
+def filter_barcodes_umis(reads, skip, n, technologies=None):
     """Filter for possible technologies using barcodes and UMI positions.
 
-    :param fastqs: list of paths to FASTQ files
-    :type fastqs: list
+    :param reads: an ordered dictionary with the path to fastqs as keys and
+                  a list of reads as values
+    :type reads: OrderedDict
     :param skip: number of reads to skip at the beginning
     :type skip: int
     :param n: number of reads to consider
@@ -174,10 +179,10 @@ def filter_barcodes_umis(fastqs, skip, n, technologies=None):
     :rtype: list
     """
     technologies = technologies or all_ordered_technologies(
-        TECHNOLOGIES, len(fastqs)
+        TECHNOLOGIES, len(reads)
     )
     barcodes, umis, invalids = extract_barcodes_umis(
-        fastqs, skip, n, technologies
+        reads, skip, n, technologies
     )
     possible = []
 
@@ -247,7 +252,7 @@ def filter_barcodes_umis(fastqs, skip, n, technologies=None):
             skew = stats.skew(counts)
             logger.debug((
                 f'Barcodes for technology {technology} has {len(set(bcs))}/{n} unique barcodes, '
-                f'mean={mean}, std={std}, kurtosis={kurtosis}, skew={skew}'
+                f'mean={mean:.2f}, std={std:.2f}, kurtosis={kurtosis:.2f}, skew={skew:.2f}'
             ))
             if mean > max_mean and passes_stats_threshold(mean, std, kurtosis,
                                                           skew):
@@ -261,7 +266,14 @@ def filter_barcodes_umis(fastqs, skip, n, technologies=None):
     return possible
 
 
-def fqc(fastqs, skip, n, technologies=None):
+def fqc_bam(path, split=False, prefix='', threads=4):
+    bam = BAM(path)
+    if split:
+        return bam.to_fastq(prefix=prefix, threads=threads)
+    return bam.technology
+
+
+def fqc_fastq(fastqs, skip, n, technologies=None):
     """Detect single-cell technology and file ordering.
 
     :param fastqs: paths to FASTQs
@@ -273,23 +285,44 @@ def fqc(fastqs, skip, n, technologies=None):
     :param technologies: list of possible OrderedTechnology objects, defaults to `None`
     :type technologies: list, optional
 
-    :return: TechnologyOrdering object
-    :rtype: TechnologyOrdering
+    :return: tuple of a list of paths to FASTQs and a list of TechnologyOrdering objects
+    :rtype: tuple
     """
     technologies = technologies or all_ordered_technologies(
         TECHNOLOGIES, len(fastqs)
     )
 
-    logger.info('Filtering based on number of files')
-    technologies = filter_files(fastqs, technologies)
+    # Read n reads, starting from read skip
+    reads = OrderedDict()
+    for path in fastqs:
+        fastq = Fastq(path)
+        rs = fastq[skip:skip + n]
+        logger.info(
+            f'Read {n} reads after skipping the first {skip} reads from {path}'
+        )
+
+        # Check if index fastq, which will have very low variation.
+        if len(set(rs)) / len(rs) < 0.1:
+            logger.warning((
+                f'Fastq {path} has {len(set(rs))}/{len(rs)} unique sequences. '
+                'This file will be considered an index read and will be ignored.'
+            ))
+            continue
+        reads[path] = rs
+    logger.info(
+        f'Only the following FASTQs will be considered: {", ".join(reads.keys())}'
+    )
+
+    logger.info(f'Filtering based on number of files: {len(reads)}')
+    technologies = filter_files(reads, technologies)
     logger.info(
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
 
     logger.info('Filtering based on barcode and UMI sequences')
-    technologies = filter_barcodes_umis(fastqs, skip, n, technologies)
+    technologies = filter_barcodes_umis(reads, skip, n, technologies)
     logger.info(
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
 
-    return technologies
+    return list(reads.keys()), technologies

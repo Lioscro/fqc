@@ -1,6 +1,5 @@
 import logging
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 import pysam
 from tqdm import tqdm
@@ -39,9 +38,7 @@ class BAM:
     # https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/output/bam
     TAGS_10X = (
         'CR',  # (uncorrected) barcode
-        'CY',  # barcode quality score
         'UR',  # (uncorrected) UMI
-        'UY',  # UMI quality score
     )
     EXTRACT_FUNCTIONS = {
         '10xv1': extract_10x,
@@ -52,7 +49,6 @@ class BAM:
     def __init__(self, path):
         self.path = path
         self.technology = self.detect_technology()
-        logger.info(f'Detected technology: {self.technology.name}')
 
     def detect_technology(self):
         """Detect what technology was used to generate this BAM.
@@ -61,9 +57,7 @@ class BAM:
         :rtype: Technology
         """
         logger.warning('Only 10x Genomics BAM files can be detected.')
-        parse = urlparse(self.path)
-        with pysam.AlignmentFile(
-                urlopen(self.path) if parse.scheme else self.path, 'rb') as f:
+        with pysam.AlignmentFile(self.path, 'rb') as f:
             # Check first read of file to see the headers.
             for item in f.fetch(until_eof=True):
                 # This is a 10x BAM
@@ -140,7 +134,7 @@ class BAM:
                     'This means a progress bar can not be displayed.'
                 ))
 
-            with pysam.AlignmentFile(urlopen(self.path) if parse.scheme else self.path, 'rb', threads=threads) as f,\
+            with pysam.AlignmentFile(self.path, 'rb', threads=threads) as f,\
                 tqdm() if parse.scheme else tqdm(total=count) as pbar:
                 for item in f.fetch(until_eof=True):
                     reads = ['N' * l for l in lengths]  # noqa

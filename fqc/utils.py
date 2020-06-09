@@ -1,5 +1,4 @@
 import gzip
-
 import logging
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -53,8 +52,7 @@ def fastq_reads(path):
     open_func = gzip.open if path.endswith('.gz') else open
     mode = 'rt' if path.endswith('.gz') else 'r'
 
-    with open_func(urlopen(path) if parse.scheme and parse.netloc else path,
-                   mode) as f:
+    with open_func(urlopen(path) if parse.scheme else path, mode) as f:
         for n, line in enumerate(f):
             if (n + 3) % 4 == 0:
                 yield line.strip()
