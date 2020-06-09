@@ -288,10 +288,6 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
     :return: tuple of a list of paths to FASTQs and a list of TechnologyOrdering objects
     :rtype: tuple
     """
-    technologies = technologies or all_ordered_technologies(
-        TECHNOLOGIES, len(fastqs)
-    )
-
     # Read n reads, starting from read skip
     reads = OrderedDict()
     for path in fastqs:
@@ -314,7 +310,7 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
     )
 
     logger.info(f'Filtering based on number of files: {len(reads)}')
-    technologies = filter_files(reads, technologies)
+    technologies = filter_files(reads)
     logger.info(
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
