@@ -1,0 +1,28 @@
+http://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_protein_v3/pbmc_1k_protein_v3_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/3.0.0/pbmc_10k_protein_v3/pbmc_10k_protein_v3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v3/pbmc_1k_v3_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/3.0.0/pbmc_10k_v3/pbmc_10k_v3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/3.0.0/hgmm_1k_v3/hgmm_1k_v3_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/3.0.0/hgmm_5k_v3/hgmm_5k_v3_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/3.0.0/hgmm_10k_v3/hgmm_10k_v3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/3.0.0/neuron_1k_v3/neuron_1k_v3_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/3.0.0/neuron_10k_v3/neuron_10k_v3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/3.0.0/heart_1k_v3/heart_1k_v3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/3.0.0/heart_10k_v3/heart_10k_v3_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/3.0.2/5k_pbmc_v3/5k_pbmc_v3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/3.0.2/1k_hgmm_v3/1k_hgmm_v3_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/3.0.2/5k_neuron_v3/5k_neuron_v3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/3.0.2/5k_pbmc_protein_v3/5k_pbmc_protein_v3_possorted_genome_bam.bam
+
+# GSE149457
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/056/SRR11616456/SRR11616456_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/056/SRR11616456/SRR11616456_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/057/SRR11616457/SRR11616457_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/057/SRR11616457/SRR11616457_2.fastq.gz
+ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/058/SRR11616458/SRR11616458_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/058/SRR11616458/SRR11616458_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/059/SRR11616459/SRR11616459_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/059/SRR11616459/SRR11616459_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/060/SRR11616460/SRR11616460_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/060/SRR11616460/SRR11616460_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/061/SRR11616461/SRR11616461_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/061/SRR11616461/SRR11616461_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/062/SRR11616462/SRR11616462_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/062/SRR11616462/SRR11616462_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/063/SRR11616463/SRR11616463_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/063/SRR11616463/SRR11616463_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/064/SRR11616464/SRR11616464_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/064/SRR11616464/SRR11616464_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/065/SRR11616465/SRR11616465_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/065/SRR11616465/SRR11616465_2.fastq.gz
+# ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/066/SRR11616466/SRR11616466_1.fastq.gz,ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR116/066/SRR11616466/SRR11616466_2.fastq.gz

@@ -1,0 +1,33 @@
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/jurkat/jurkat_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/frozen_pbmc_donor_c/frozen_pbmc_donor_c_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/frozen_pbmc_donor_b/frozen_pbmc_donor_b_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/frozen_pbmc_donor_a/frozen_pbmc_donor_a_possorted_genome_bam.bam
+# http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/frozen_bmmc_healthy_donor1/frozen_bmmc_healthy_donor1_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/frozen_bmmc_healthy_donor2/frozen_bmmc_healthy_donor2_possorted_genome_bam.bam
+# http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/fresh_68k_pbmc_donor_a/fresh_68k_pbmc_donor_a_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/ercc/ercc_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/naive_cytotoxic/naive_cytotoxic_possorted_genome_bam.bam
+# http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/cytotoxic_t/cytotoxic_t_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/cd56_nk/cd56_nk_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/memory_t/memory_t_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/naive_t/naive_t_possorted_genome_bam.bam
+# http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/regulatory_t/regulatory_t_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/cd4_t_helper/cd4_t_helper_possorted_genome_bam.bam
+# http://cf.10xgenomics.com/samples/cell-exp/1.1.0/cd34/cd34_possorted_genome_bam.bam
+# http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/b_cells/b_cells_possorted_genome_bam.bam
+# http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/cd14_monocytes/cd14_monocytes_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/aml035_pre_transplant/aml035_pre_transplant_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/aml035_post_transplant/aml035_post_transplant_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/aml027_pre_transplant/aml027_pre_transplant_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/aml027_post_transplant/aml027_post_transplant_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/jurkat_293t_99_1/jurkat_293t_99_1_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/frozen_pbmc_b_c_99_1/frozen_pbmc_b_c_99_1_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/frozen_pbmc_b_c_90_10/frozen_pbmc_b_c_90_10_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/jurkat:293t_50:50/jurkat:293t_50:50_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/frozen_pbmc_b_c_50_50/frozen_pbmc_b_c_50_50_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/293t_3t3/293t_3t3_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/293t/293t_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/pbmc6k/pbmc6k_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/pbmc3k/pbmc3k_possorted_genome_bam.bam
+http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-exp/1.1.0/pbmc33k/pbmc33k_possorted_genome_bam.bam
+http://cf.10xgenomics.com/samples/cell-exp/1.1.0/hgmm/hgmm_possorted_genome_bam.bam

@@ -1,9 +1,9 @@
 import logging
-from collections import Counter, OrderedDict
+from collections import OrderedDict
 from itertools import permutations
 
-import numpy as np
-import scipy.stats as stats
+# import numpy as np
+# import scipy.stats as stats
 
 from .bam import BAM
 from .config import BARCODE_THRESHOLD
@@ -35,7 +35,7 @@ def all_ordered_technologies(technologies=None, n=1):
     return ordered
 
 
-def extract_barcodes_umis(reads, skip, n, technologies=None):
+def extract_barcodes_umis(reads, technologies=None):
     """Extract all sequences in barcode and UMI positions for each given
     technology for all possible orderings of the FASTQs.
 
@@ -54,10 +54,6 @@ def extract_barcodes_umis(reads, skip, n, technologies=None):
     :param reads: an ordered dictionary with the path to fastqs as keys and
                   a list of reads as values
     :type reads: OrderedDict
-    :param skip: number of reads to skip at the beginning
-    :type skip: int
-    :param n: number of reads to consider
-    :type n: int
     :param technologies: list of OrderedTechnology objects to consider, defaults to `None`
     :type technologies: list, optional
 
@@ -75,12 +71,6 @@ def extract_barcodes_umis(reads, skip, n, technologies=None):
     umis = {}
     invalids = {}
     for i, reads in enumerate(zip(*list(reads.values()))):
-        # Ignore first SKIP_READS, and consider next N_READS only
-        if i < skip:
-            continue
-        if i >= skip + n:
-            break
-
         for ordered in technologies:
             technology = ordered.technology
             permutation = ordered.permutation
@@ -161,16 +151,12 @@ def filter_files(reads, technologies=None):
     return possible
 
 
-def filter_barcodes_umis(reads, skip, n, technologies=None):
+def filter_barcodes_umis(reads, technologies=None):
     """Filter for possible technologies using barcodes and UMI positions.
 
     :param reads: an ordered dictionary with the path to fastqs as keys and
                   a list of reads as values
     :type reads: OrderedDict
-    :param skip: number of reads to skip at the beginning
-    :type skip: int
-    :param n: number of reads to consider
-    :type n: int
     :param technologies: list of possible OrderedTechnology objects, defaults to `None`
     :type technologies: list, optional
 
@@ -181,9 +167,7 @@ def filter_barcodes_umis(reads, skip, n, technologies=None):
     technologies = technologies or all_ordered_technologies(
         TECHNOLOGIES, len(reads)
     )
-    barcodes, umis, invalids = extract_barcodes_umis(
-        reads, skip, n, technologies
-    )
+    barcodes, umis, invalids = extract_barcodes_umis(reads, technologies)
     possible = []
 
     # Filter with barcodes.
@@ -205,65 +189,70 @@ def filter_barcodes_umis(reads, skip, n, technologies=None):
             whitelist = set(f.read().splitlines())
 
         for p in barcodes[technology.name]:
+            ordered = OrderedTechnology(technology, p)
+            n = len(barcodes[technology.name][p])
             count = 0
             for bc_list in barcodes[technology.name][p]:
                 if ''.join(bc_list) in whitelist:
                     count += 1
 
+            logger.info(
+                f'Technology {ordered} has {count}/{n} matching barcodes.'
+            )
             if count > n * BARCODE_THRESHOLD and count > max_count:
-                max_ordered = OrderedTechnology(technology, p)
+                max_ordered = ordered
                 max_count = count
     if max_ordered is not None:
         possible.append(max_ordered)
         logger.debug(
             f'Technology {max_ordered} passed whitelist filter with {max_count}/{n} matching barcodes'
         )
-        return possible
-
-    # Check technologies without whitelist
-    other_technologies = [
-        technology for technology in TECHNOLOGIES
-        if not technology.whitelist_path and technology.name in
-        [ordered.technology.name for ordered in technologies]
-    ]
-    logger.debug(
-        f'Checking technologies without whitelists: {", ".join(str(ordered) for ordered in other_technologies)}'
-    )
-
-    def passes_stats_threshold(mean, std, kurtosis, skew):
-        """Helper function to check if the barcode statistics passes a
-        certain threshold.
-
-        TODO: is there a way to make these numbers not arbitrary/manually selected?
-        """
-        if mean > 2 and std > 10 and kurtosis < 2000 and skew < 50:
-            return True
-        return False
-
-    max_ordered = None
-    max_mean = 0
-    for technology in other_technologies:
-        for p in barcodes[technology.name]:
-            bcs = [''.join(bc_list) for bc_list in barcodes[technology.name][p]]
-            counts = list(Counter(bcs).values())
-            mean = np.mean(counts)
-            std = np.std(counts)
-            kurtosis = stats.kurtosis(counts)
-            skew = stats.skew(counts)
-            logger.debug((
-                f'Barcodes for technology {technology} has {len(set(bcs))}/{n} unique barcodes, '
-                f'mean={mean:.2f}, std={std:.2f}, kurtosis={kurtosis:.2f}, skew={skew:.2f}'
-            ))
-            if mean > max_mean and passes_stats_threshold(mean, std, kurtosis,
-                                                          skew):
-                max_ordered = OrderedTechnology(technology, p)
-                max_mean = mean
-    if max_ordered is not None:
-        possible.append(max_ordered)
-        logger.debug(f'Technology {max_ordered} passed barcode filter')
-        return possible
-
     return possible
+
+    # # Check technologies without whitelist
+    # other_technologies = [
+    #     technology for technology in TECHNOLOGIES
+    #     if not technology.whitelist_path and technology.name in
+    #     [ordered.technology.name for ordered in technologies]
+    # ]
+    # logger.debug(
+    #     f'Checking technologies without whitelists: {", ".join(str(ordered) for ordered in other_technologies)}'
+    # )
+    #
+    # def passes_stats_threshold(mean, std, kurtosis, skew):
+    #     """Helper function to check if the barcode statistics passes a
+    #     certain threshold.
+    #
+    #     TODO: is there a way to make these numbers not arbitrary/manually selected?
+    #     """
+    #     if mean > 2 and std > 10 and kurtosis < 2000 and skew < 50:
+    #         return True
+    #     return False
+    #
+    # max_ordered = None
+    # max_mean = 0
+    # for technology in other_technologies:
+    #     for p in barcodes[technology.name]:
+    #         bcs = [''.join(bc_list) for bc_list in barcodes[technology.name][p]]
+    #         counts = list(Counter(bcs).values())
+    #         mean = np.mean(counts)
+    #         std = np.std(counts)
+    #         kurtosis = stats.kurtosis(counts)
+    #         skew = stats.skew(counts)
+    #         logger.debug((
+    #             f'Barcodes for technology {technology} has {len(set(bcs))}/{n} unique barcodes, '
+    #             f'mean={mean:.2f}, std={std:.2f}, kurtosis={kurtosis:.2f}, skew={skew:.2f}'
+    #         ))
+    #         if mean > max_mean and passes_stats_threshold(mean, std, kurtosis,
+    #                                                       skew):
+    #             max_ordered = OrderedTechnology(technology, p)
+    #             max_mean = mean
+    # if max_ordered is not None:
+    #     possible.append(max_ordered)
+    #     logger.debug(f'Technology {max_ordered} passed barcode filter')
+    #     return possible
+    #
+    # return possible
 
 
 def fqc_bam(path, split=False, prefix='', threads=4):
@@ -300,7 +289,7 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
         # Check if index fastq, which will have very low variation.
         if len(set(rs)) / len(rs) < 0.01:
             logger.warning((
-                f'Fastq {path} has {len(set(rs))}/{len(rs)} unique sequences. '
+                f'FASTQ {path} has {len(set(rs))}/{len(rs)} unique sequences. '
                 'This file will be considered an index read and will be ignored.'
             ))
             continue
@@ -316,7 +305,7 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
     )
 
     logger.info('Filtering based on barcode and UMI sequences')
-    technologies = filter_barcodes_umis(reads, skip, n, technologies)
+    technologies = filter_barcodes_umis(reads, technologies)
     logger.info(
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
