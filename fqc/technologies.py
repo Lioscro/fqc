@@ -25,15 +25,15 @@ class OrderedTechnology(namedtuple('OrderedTechnology',
 ReadSubstring = namedtuple('ReadSubstring', ['file', 'start', 'stop'])
 
 TECHNOLOGIES = [
-    Technology(
-        '10xv1',
-        '10x version 1',
-        3,
-        ReadSubstring(2, None, None),
-        [ReadSubstring(1, 0, 10)],
-        [ReadSubstring(0, 0, 14)],
-        os.path.join(WHITELIST_DIR, '10xv1_whitelist.txt.gz'),
-    ),
+    # Technology(
+    #     '10xv1',
+    #     '10x version 1',
+    #     3,
+    #     ReadSubstring(2, None, None),
+    #     [ReadSubstring(1, 0, 10)],
+    #     [ReadSubstring(0, 0, 14)],
+    #     os.path.join(WHITELIST_DIR, '10xv1_whitelist.txt.gz'),
+    # ),
     Technology(
         '10xv2',
         '10x version 2',
@@ -81,14 +81,14 @@ TECHNOLOGIES = [
     #      ReadSubstring(1, 30, 38)],
     #     None,
     # ),
-    Technology(
-        'indropsv3',
-        'inDrops version 3',
-        3,
-        ReadSubstring(2, None, None),
-        [ReadSubstring(1, 8, 14)],
-        [ReadSubstring(0, 0, 8), ReadSubstring(1, 0, 8)],
-        os.path.join(WHITELIST_DIR, 'indropsv3_whitelist.txt.gz'),
-    ),
+    # Technology(
+    #     'indropsv3',
+    #     'inDrops version 3',
+    #     3,
+    #     ReadSubstring(2, None, None),
+    #     [ReadSubstring(1, 8, 14)],
+    #     [ReadSubstring(0, 0, 8), ReadSubstring(1, 0, 8)],
+    #     os.path.join(WHITELIST_DIR, 'indropsv3_whitelist.txt.gz'),
+    # ),
 ]
 TECHNOLOGIES_MAPPING = {t.name: t for t in TECHNOLOGIES}

@@ -2,8 +2,8 @@ import logging
 from collections import OrderedDict
 from itertools import permutations
 
-# import numpy as np
-# import scipy.stats as stats
+import numpy as np
+import scipy.stats as stats
 
 from .bam import BAM
 from .config import BARCODE_THRESHOLD
@@ -196,7 +196,7 @@ def filter_barcodes_umis(reads, technologies=None):
                 if ''.join(bc_list) in whitelist:
                     count += 1
 
-            logger.info(
+            logger.debug(
                 f'Technology {ordered} has {count}/{n} matching barcodes.'
             )
             if count > n * BARCODE_THRESHOLD and count > max_count:
@@ -255,6 +255,51 @@ def filter_barcodes_umis(reads, technologies=None):
     # return possible
 
 
+def is_single_cell(reads):
+    """Given a list of list of reads as values, determine if they are from a
+    single-cell experiment.
+
+    Only supports paired-end reads for now.
+    1) If the read lengths differ, is single-cell.
+    2) If one of the reads has more A's at the end of the read, is single-cell.
+    3) Take a highly-exposed housekeeping gene and align the reads to that.
+       For bulk paired-end reads, the pairs will map to both ends of the gene.
+
+    :param reads: list of lists, with the inner list containing reads
+    :type reads: list
+
+    :return: whether or not the reads are single-cell
+    :rtype: bool
+    """
+    if len(reads) != 2:
+        return False
+
+    # Check read lengths.
+    lengths = [[len(r) for r in rs] for rs in reads]
+    _, p_value = stats.ttest_ind(*lengths, equal_var=False)
+    logger.debug(f'Lengths p-value={p_value}')
+    if not np.isnan(p_value) and p_value < 0.05:
+        return True
+
+    # Check for poly-A, allowing N's to be considered as A's.
+    # TODO: should we consider 'islands' of A's as well?
+    polys = [[l - len(r.upper().rstrip('AN'))
+              for r, l in zip(rs, ls)]
+             for rs, ls in zip(reads, lengths)]
+    means = [np.mean(poly) for poly in polys]
+    logger.debug(f'Poly-A means={means}')
+    # TODO: is there a better way to decide whether to run the T-test on
+    # the number of trailing A's?
+    if any(mean > 1 for mean in means):
+        _, p_value = stats.ttest_ind(*polys, equal_var=False)
+        logger.debug(f'Poly-A p-value={p_value}')
+        if p_value < 0.05:
+            return True
+
+    # TODO: implement aligning to housekeeping gene
+    return False
+
+
 def fqc_bam(path, split=False, prefix='', threads=4):
     bam = BAM(path)
     if split:
@@ -294,19 +339,24 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
             ))
             continue
         reads[path] = rs
-    logger.info(
-        f'Only the following FASTQs will be considered: {", ".join(reads.keys())}'
-    )
+    logger.info('Only the following FASTQs will be considered:')
+    for path in reads.keys():
+        logger.info(f'\t{path}')
+
+    if not is_single_cell(list(reads.values())):
+        raise Exception(
+            'The provided FASTQs are not from a single-cell experiment.'
+        )
 
     logger.info(f'Filtering based on number of files: {len(reads)}')
     technologies = filter_files(reads)
-    logger.info(
+    logger.debug(
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
 
     logger.info('Filtering based on barcode and UMI sequences')
     technologies = filter_barcodes_umis(reads, technologies)
-    logger.info(
+    logger.debug(
         f'{len(technologies)} passed the filter: {", ".join(str(technology) for technology in technologies)}'
     )
 
