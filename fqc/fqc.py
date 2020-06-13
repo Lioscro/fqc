@@ -343,10 +343,10 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
     for path in reads.keys():
         logger.info(f'\t{path}')
 
-    if not is_single_cell(list(reads.values())):
-        raise Exception(
-            'The provided FASTQs are not from a single-cell experiment.'
-        )
+    # if not is_single_cell(list(reads.values())):
+    #     raise Exception(
+    #         'The provided FASTQs are not from a single-cell experiment.'
+    #     )
 
     logger.info(f'Filtering based on number of files: {len(reads)}')
     technologies = filter_files(reads)
