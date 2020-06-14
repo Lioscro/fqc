@@ -6,7 +6,6 @@ import numpy as np
 import scipy.stats as stats
 
 from .bam import BAM
-from .config import BARCODE_THRESHOLD
 from .fastq import Fastq
 from .technologies import OrderedTechnology, TECHNOLOGIES
 from .utils import open_as_text
@@ -199,7 +198,7 @@ def filter_barcodes_umis(reads, technologies=None):
             logger.debug(
                 f'Technology {ordered} has {count}/{n} matching barcodes.'
             )
-            if count > n * BARCODE_THRESHOLD and count > max_count:
+            if count / n > 0.5 and count > max_count:
                 max_ordered = ordered
                 max_count = count
     if max_ordered is not None:
@@ -328,11 +327,11 @@ def fqc_fastq(fastqs, skip, n, technologies=None):
         fastq = Fastq(path)
         rs = fastq[skip:skip + n]
         logger.info(
-            f'Read {n} reads after skipping the first {skip} reads from {path}'
+            f'Read {len(rs)} reads after skipping the first {skip} reads from {path}'
         )
 
         # Check if index fastq, which will have very low variation.
-        if len(set(rs)) / len(rs) < 0.01:
+        if len(set(rs)) / len(rs) < 0.05:
             logger.warning((
                 f'FASTQ {path} has {len(set(rs))}/{len(rs)} unique sequences. '
                 'This file will be considered an index read and will be ignored.'
